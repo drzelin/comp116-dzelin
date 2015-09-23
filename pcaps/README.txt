@@ -16,11 +16,11 @@ set1.pcap
    CLu-m0MWoAAgjkr.jpg,
    CKBXgmOWcAAtc4u.jpg,
    CJoWmoOUkAAAYpx.jpg
-9)
+9) Files are saved in this directory
 
 set2.pcap
 10) There are 77982 packets in set2.pcap.
-11) There were 12 username-password pairs
+11) There was 1 username-password pair. However, there were 11 public accounts which were anonymous logins.
 12) I used the command dsniff which is a password sniffer and the option -p sniffs passwords for pcap files.
 13) 
 	Username:	 larry@radsot.com
@@ -29,8 +29,31 @@ set2.pcap
 	Server IP:   76.0d.78.57.d6.net
 	Domain Name: dom.bg
 	Port Number: 143
-14) I can tell that the username and password for larry@radsot.com are valid because the emails between him and other sources are visible when looking through wireshark. For example, it is clear that on Friday August 7, 2015 Larry canceled an amazon order of "Pioneer DDJ-SB Performance...". He received an email for "order-update@amazon.com" that has the subject that he canceled this order. Like this amazon order, there are several other emails that can be viewed.
+
+14) I can tell that the username and password for larry@radsot.com are valid because the emails between him and other sources are visible when looking through wireshark. Also, words like OK and 200 were displayed when the TCP stream was followed. For example, it is clear that on Friday August 7, 2015 Larry canceled an amazon order of "Pioneer DDJ-SB Performance...". He received an email for "order-update@amazon.com" that has the subject that he canceled this order. Like this amazon order, there are several other emails that can be viewed.
 
 set3.pcap
+15) There were 2 username-password pairs. There were several other public accounts whic were anonymous logins. 
+16) 
+	Username:    seymour
+	Password:    butts
+	Protocol:    HTTP
+	Server IP:   162.222.171.208
+	Domain Name: forum.defcon.org 
+	Port Number: 80
 
+	Username:    jeff
+	Password: 	 asdasdasd
+	Protocol: 	 HTTP
+	Server IP:   54.191.109.23
+	Domain Name: ec2.intelctf.com
+	Port Number: 80
+
+17) The username seymour with password butts is not legitimate because the status code given was 403 Forbidden. Also the username jeff with password asdasdasd is not legitimate becuase the status code given was 401 Unauthorized.
+
+18) 
+
+19) To verify successful username-password pairs, I checked the TCP streams to look for key words like 200, OK, or 403, and 401. If 200 and OK existed in the stream, then the username-password pairs were verified.
+
+20) I would tell the users to 
 
