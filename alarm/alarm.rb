@@ -19,7 +19,7 @@ end
 # Only used when live packets are being analyzed
 # returns true if the binary version of the word Nmap is found
 def isLiveNmap(packet)
-	return (packet.scan(/\x4E\x6D\x61\x70/))
+	return (packet =~ (/\x4E\x6D\x61\x70/))
 end
 
 # Only used when analyzing the plaintext web server file
@@ -31,7 +31,7 @@ end
 # Only used when live packets are being analyzed
 # returns true if the binary version of the word Nikto is found
 def isLiveNikto(packet)
-	return (packet.scan(/\x4E\x69\x6b\x74\x6F/))
+	return (packet =~ (/\x4E\x69\x6b\x74\x6F/))
 end
 
 # Only used when analyzed the plaintext web server file
@@ -66,12 +66,12 @@ end
 
 # Returns true if the character below are found that order 
 def isShellshock(log)
-	return (log.match(/() { :;}/) != nil)
+	return (log.match(/() { :; }/) != nil)
 end
 
 # Returns true if the string phpMyAdmin is found 
 def isPHPAdmin(log)
-	return (log.match(/phpMyAdmin/) != nil)
+	return (log.match(/phpMyAdmin/i) != nil)
 end
 
 # Returns true if the \x is found
@@ -82,24 +82,24 @@ end
 # Prints the alerts for both live packets and web server logs
 def printAlert(count, incident, sourceIP, protocol, payload, notScan=false)
 	if notScan
-		puts "#{count}. ALERT: #{incident} in the clear from #{sourceIP} #{protocol} #{payload}"
+		puts "#{count}. ALERT: #{incident} in the clear from #{sourceIP} (#{protocol}) (#{payload})"
 	else
-		puts "#{count}. ALERT: #{incident} is detected from #{sourceIP} #{protocol} #{payload}"
+		puts "#{count}. ALERT: #{incident} is detected from #{sourceIP} (#{protocol}) (#{payload})"
 	end
 end
 
 # Gets necessary variables for the web server logs
 def printLogs(count, incident, log)
-	splitLogs = log.split
-	#splitLogs = log.split(/\s(?=(?:[^"]|"[^"]*")$)/)
+	#splitLogs = log.split
+	splitLogs = log.split(/\s(?=(?:[^"]|"[^"]*")*$)/)
 	sourceIP = splitLogs[0]
-	protocol = splitLogs[5]
-	payload = splitLogs[11]
-	#print sourceIP
-	#print protocol
-	#print payload
+	payload = splitLogs[5]
+	protocol = 'UDP'
+	if log.match(/HTTP/)
+		protocol = 'HTTP'
+	end
+	printAlert(count, incident, sourceIP, protocol, payload)
 
-	puts incident
 end
 
 # Reads in the live packets and calls necessary functions to determine if an attack
@@ -127,6 +127,31 @@ def analyzeLivePackets()
 	end
 end		
 
+# Reads in a pcap and calls necessary functions to determine if attacks have been performed
+def analyzeReadPackets(pcap)
+	pkt = Pcap.open_offline(pcap)
+	pkt = PacketFu::PcapFile.read(pcap)
+	count = 0
+	pkt.each do |p|
+		pkt = PacketFu::Packet.parse(p)
+		if pkt.is_ip? and pkt.is_tcp?
+			if isNullScan(pkt)
+				printAlert(count+=1, "NULL scan", pkt.ip_saddr, pkt.proto.last, pkt.payload)
+			elsif isFinScan(pkt)
+				printAlert(count+=1, "FIN scan", pkt.ip_saddr, pkt.proto.last, pkt.payload)
+			elsif isXmasScan(pkt)
+				printAlert(count+=1, "XMAS scan", pkt.ip_saddr, pkt.proto.last, pkt.payload)
+			elsif isLiveNmap(pkt.payload)
+				printAlert(count+=1, "NMAP scan", pkt.ip_saddr, pkt.proto.last, pkt.payload)
+			elsif isLiveNikto(pkt.payload)
+				printAlert(count+=1, "NIKTO scan", pkt.ip_saddr, pkt.proto.last, pkt.payload)
+			elsif isCreditCard(pkt.payload)
+				printAlert(count+=1, "Credit card leaked", pkt.ip_saddr, pkt.proto.last, pkt.payload, true)
+			end
+		end
+	end
+end
+
 # Reads the web server logs line by line and calls necessary functions to determine 
 # if an attack has been performed
 def analyzeServerLog(logs)
@@ -134,17 +159,17 @@ def analyzeServerLog(logs)
 	File.readlines(logs).collect do |log|
 		incident = ''
 		if isServerNmap(log)
-			printLogs(count+=1, "An NMAP scan ", log)
+			printLogs(count+=1, "An NMAP scan", log)
 		elsif isServerNikto(log)
-			printLogs(count+=1, "A Nikto scan ", log)
+			printLogs(count+=1, "A Nikto scan", log)
 		elsif isRGMasscan(log)
-			printLogs(count+=1, "A Masscan scan ", log)
+			printLogs(count+=1, "A Masscan scan", log)
 		elsif isShellshock(log)
-			printLogs(count+=1, "Shellshock ", log)
+			printLogs(count+=1, "Shellshock", log)
 		elsif isPHPAdmin(log)
-			printLogs(count+=1, "Someone looking for phpMyAdmin stuff ", log)
+			printLogs(count+=1, "Someone looking for phpMyAdmin stuff", log)
 		elsif isShellcode(log)
-			printLogs(count+=1, "Shellcode ", log)
+			printLogs(count+=1, "Shellcode", log)
 		end
 	end
 end
@@ -153,6 +178,8 @@ end
 def detectIncidents(argv)
 	if (argv[0] == '-r' and argv[1] != nil)
 		analyzeServerLog(argv[1])
+	elsif (argv[0] == '-p' and argv[1] != nil)
+		analyzeReadPackets(argv[1])
 	else
 		analyzeLivePackets
 	end

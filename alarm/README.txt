@@ -11,4 +11,4 @@ Due 10/13/15
 
 1) I think the heuristics used in this assignment are okay. i say that becuase if a person knows that this attack-detecter exists (especially for general Nmap scnas, Nikto scnas, and any other attacks that just involve searching if certain expressions exist) is easy to prevent those expressions from being displayed in the packets. This includes private searches and other methods that can cover up what attacks have been performed. However, when testing the flags, I think this assignment handles those attacks well and are challenging (as an attacker) to avoid.
 
-2) I would test for more scans using the different flags. I would also 
+2) I would test for more scans using different programs than nmap or masscan. I would also try to be less specific when testing for strings in the web server log. It is possible that someone running these scans could find ways to prevent these strings from being displayed. 
