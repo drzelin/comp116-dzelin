@@ -90,14 +90,10 @@ end
 
 # Gets necessary variables for the web server logs
 def printLogs(count, incident, log)
-	#splitLogs = log.split
 	splitLogs = log.split(/\s(?=(?:[^"]|"[^"]*")*$)/)
 	sourceIP = splitLogs[0]
 	payload = splitLogs[5]
-	protocol = 'UDP'
-	if log.match(/HTTP/)
-		protocol = 'HTTP'
-	end
+	protocol = 'HTTP'
 	printAlert(count, incident, sourceIP, protocol, payload)
 
 end
